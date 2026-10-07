@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Hygyenist checker result",
+  "type": "object",
+  "properties": {
+    "status": { "type": "string", "enum": ["OK", "FAIL"] },
+    "message": { "type": "string" }
+  },
+  "required": ["status"],
+  "additionalProperties": false,
+  "if": {
+    "properties": { "status": { "const": "FAIL" } },
+    "required": ["status"]
+  },
+  "then": { "required": ["message"] }
+}

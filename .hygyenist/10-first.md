@@ -1,0 +1,1 @@
+Return "hello" as message and fail status.
