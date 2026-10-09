@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Hygyenist checker result",
+  "title": "Hygienist checker result",
   "type": "object",
   "properties": {
     "status": { "type": "string", "enum": ["OK", "FAIL"] },
