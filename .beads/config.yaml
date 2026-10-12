@@ -1,0 +1,2 @@
+sync:
+  remote: "git+https://github.com/cleg/hygienist.git"

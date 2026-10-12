@@ -1,0 +1,6 @@
+# Beads workflow for Goose
+
+Read the repository's `AGENTS.md` and use Beads (`bd`) for durable task
+tracking. Before work, run `bd prime`, `bd dolt pull`, and `bd ready`; claim
+the selected issue when appropriate and close it only after completion. Follow
+the project handoff instructions in `AGENTS.md`.
