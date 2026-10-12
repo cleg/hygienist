@@ -126,3 +126,36 @@ and helper bypass, and test the candidate before installation on synthetic
 success, absence, malformed, invalid-key, and usage-error inputs with invented
 canaries, input preservation and artifact checks. Do not run the installed
 helper or real project check during authoring.
+
+## Editing scenarios
+
+Use `edit-rule` from the installed copy with fresh agent contexts and the explicit
+requests in the generated manifest's `edit_requests`. All targets are synthetic;
+never read real secret inputs, use hostile specimens, or execute installed rules
+as part of editing. Changed helpers may be tested only in separate invented-input
+trees under the authoring verification procedure.
+
+| Target | Required observation |
+| --- | --- |
+| `edit-rule-only` | Change absent-input handling to FAIL, preserve helper bytes and adaptations; preserve other rule contents through renumbering. Offer a run but do not execute it. |
+| `edit-compatible` | Change only the shared helper error diagnostic in place; verify both callers' contracts, synthetic success/failures and unchanged real inputs. |
+| `edit-incompatible` | Use a new helper name for JSON key output; migrate only selected rule, preserve old helper and NAME= caller. |
+| `edit-unknown` | Dynamic reference prevents complete inventory; use a new helper for selected rule and preserve old code. |
+| `edit-path-conflict` | Reject linked helpers before descendant reads or writes; preserve target and external destination. |
+| `edit-concurrent` | Harness appends a distinct synthetic comment after baseline review and before write; agent stops without overwriting it. Coordinate through a checkpoint message; do not infer this race was tested from an ordinary edit trial. |
+| `edit-renumber-conflict` | Preserve conflicting directory, report incomplete edit with actual state and recovery, no run offer. |
+
+For each trial capture baseline/final paths, bytes/hashes and modes, mapping
+unrelated rules by suffix across numeric renames. Verify that project inputs and
+unrelated contents are unchanged; compatible replacement preserves consumers,
+and incompatible migration retains the old helper. Record agent tool observations
+separately from filesystem evidence: unchanged inputs alone cannot prove absence
+of execution. A successful edit must report final paths and offer a run, mentioning
+permitted repairs if any, then end without starting it when the offer is unanswered.
+Also exercise ambiguous/missing rule selection. For the repair-permission
+offer scenario, copy the generated `run-normal` target to a separate fresh
+temporary target, then request that the environment rule report the helper key
+count after successful synchronization while preserving skips, auditing and all
+repair permissions. Do not accept the run offer. Require that it mention possible
+`.env.example` changes, with no example creation or helper execution during editing. Keep observed evidence external, and list scenarios
+that were only documented or generated rather than agent-tested.

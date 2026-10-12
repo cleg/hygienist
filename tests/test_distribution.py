@@ -9,7 +9,7 @@ PROJECT = Path(__file__).resolve().parents[1]
 SKILL = PROJECT / "skills/hygienist"
 FILES = {
     "SKILL.md", "LICENSE", "agents/openai.yaml",
-    "references/ADD-RULE.md", "references/CHECKER.md",
+    "references/ADD-RULE.md", "references/EDIT-RULE.md", "references/CHECKER.md",
     "references/HELPERS.md", "references/INIT.md",
     "references/INSPECT.md", "references/RUN.md",
     "references/SAFETY.md", "references/checker-result.schema.json",

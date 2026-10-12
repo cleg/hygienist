@@ -70,4 +70,4 @@ review is not a safety guarantee. `run` does not automatically inspect rules or
 block execution based on this report; the user is responsible for that choice.
 
 Do not edit anything during `inspect`. If the user later requests a rewrite,
-handle it as a separate rule-maintenance operation and renumber after changes.
+follow [EDIT-RULE.md](EDIT-RULE.md) as a separate operation.

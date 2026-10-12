@@ -15,7 +15,8 @@ existing rule names and relevant project instructions to understand conventions,
 spot duplicate rules, and identify concrete paths or commands. Read only project
 resources relevant to the proposed check. If a similar rule exists, explain the
 overlap and ask whether the user wants a separate rule or to change the existing
-one; do not silently overwrite or broaden it.
+one; do not silently overwrite or broaden it. If the user chooses to change it,
+follow [EDIT-RULE.md](EDIT-RULE.md).
 
 Gather the following details from the request, conversation, and relevant files.
 Ask about the missing or ambiguous parts in the user's language:

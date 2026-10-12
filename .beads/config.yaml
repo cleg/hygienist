@@ -1,2 +1,4 @@
 sync:
-  remote: "git+https://github.com/cleg/hygienist.git"
+    remote: "git+ssh://git@gh-private/cleg/hygienist.git"
+
+# remote: "git+https://github.com/cleg/hygienist.git"

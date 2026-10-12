@@ -66,6 +66,7 @@ own words. For example:
 | --- | --- |
 | Set up Hygienist in a project | `Use $hygienist to init this project` |
 | Add a project-specific check | `Use $hygienist to add-rule: verify that all environment variables are documented` |
+| Edit an existing check | `Use $hygienist to edit-rule: make the environment example check read-only` |
 | Review checks for risky instructions | `Use $hygienist to inspect this project` |
 | Run the project's checks | `Use $hygienist to check repository hygiene` |
 
@@ -92,6 +93,20 @@ specifies its helper commands, inputs, outputs, error behavior, and allowed
 changes. Existing helpers are reused only when their contents match; conflicting
 files are not overwritten. Adding a check does not run it against the project.
 New custom helpers can be verified separately on synthetic temporary inputs before installation.
+
+### Edit checks
+
+Ask to change an existing rule by path, name, or description. The agent clarifies
+ambiguous choices, preserves project adaptations and unrelated behavior, checks
+helper dependencies, and renumbers rules after editing. Compatible shared-helper
+updates preserve every caller; incompatible changes use a new helper name for
+the selected rule while keeping the old version. Changed custom helpers are
+verified on synthetic temporary inputs.
+
+Editing does not run the rule against your project. After a successful edit, the
+agent offers to run it and mentions any permitted repairs; it waits for your
+acceptance before executing. You can leave that offer unanswered or decline it
+and the edit remains complete.
 
 ### Maintain helpers
 

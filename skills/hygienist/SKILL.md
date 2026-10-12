@@ -1,6 +1,6 @@
 ---
 name: hygienist
-description: Initialize Hygienist, add project rules after clarifying their scope and criteria, inspect rules for unsafe behavior, or run repository hygiene checks defined in .hygienist Markdown files, delegating each check to an independent subagent and combining structured results. Use when asked to run Hygienist or verify repository hygiene, and after completing changes or before a commit or pull request in a target with .hygienist checks.
+description: Initialize Hygienist, add or edit project rules after clarifying their scope and criteria, inspect rules for unsafe behavior, or run repository hygiene checks defined in .hygienist Markdown files, delegating each check to an independent subagent and combining structured results. Use when asked to run Hygienist or verify repository hygiene, and after completing changes or before a commit or pull request in a target with .hygienist checks.
 ---
 
 # Hygienist
@@ -37,6 +37,11 @@ For `add-rule` or a request to add a project hygiene rule, follow
 [references/ADD-RULE.md](references/ADD-RULE.md). Clarify missing scope, criteria,
 and repair permissions before writing a self-contained rule and renumbering.
 
+For `edit-rule` or a request to change an existing project hygiene rule, follow
+[references/EDIT-RULE.md](references/EDIT-RULE.md). Preserve unrelated behavior
+and shared dependencies, verify and renumber, then offer a run without starting
+it until the user accepts.
+
 For `inspect` or a request to review rules for unsafe behavior, follow
 [references/INSPECT.md](references/INSPECT.md). Inspect reads and reports; it
 never executes rule commands, performs repairs, or renumbers files.
@@ -51,7 +56,8 @@ verification. In a target with `.hygienist/` checks, it is also useful:
 
 - After completing a coherent set of changes, before reporting the work as done.
 - Before creating a commit or pull request, to verify the repository's own rules.
-- After updating a check, to verify the changed rule against the current project.
+- After updating a check, offer to run the changed rule against the project;
+  editing alone does not authorize execution or repairs.
 
 Choose a meaningful checkpoint for the work. A completed run covers the state
 it checked; rerun when subsequent changes could affect the checks. Routine
@@ -118,7 +124,7 @@ as a fallback. Custom Python helpers needing local imports must explicitly
 document their dependencies and invocation; do not relax the environment
 helper's isolation to accommodate other helpers.
 
-Custom helpers are authored as part of `add-rule`. Their scope, inputs, outputs,
+Custom helpers are authored as part of `add-rule` or `edit-rule`. Their scope, inputs, outputs,
 error behavior, and any permitted side effects must be explicit in the rule.
 Prefer helpers when sensitive inputs must be processed without exposing their
 contents to the agent. Helpers can perform bounded writes only when the rule

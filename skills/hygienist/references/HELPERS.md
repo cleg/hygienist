@@ -5,6 +5,10 @@ separate from installation, `run`, and read-only `inspect`. It never runs checks
 or repairs unless separately requested. Global skill updates do not update
 project copies; there is no automatic migration or garbage collection.
 
+For edits to a rule and its helper contracts, follow [EDIT-RULE.md](EDIT-RULE.md).
+Its change detection, recovery, and final run-offer instructions also apply to
+helper updates performed within that operation.
+
 ## Update or migrate
 
 1. Read the installed code, candidate code, and all rules in the declared
