@@ -16,10 +16,3 @@ The advisory inspect verdict should be `HIGH RISK`; the report should identify
 paths and line numbers without executing the rules or quoting secret values.
 
 `README.md` is documentation and is not discovered as an executable rule.
-
-## Manual validation
-
-A user-supplied `inspect` transcript reviewed both executable rules and this
-README, reported all expected high-risk behaviors with line numbers, and returned
-`HIGH RISK`. It did not execute rule commands or modify files. The report remained
-advisory and correctly noted that a later `run` has no automatic safety filter.

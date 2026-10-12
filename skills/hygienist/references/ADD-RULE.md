@@ -54,6 +54,63 @@ For an explicitly selected starter template, read the selected template and use
 its existing behavior. Ask only about requested adaptations or unresolved target
 information; do not re-ask the template's already defined choices.
 
+## Supporting helpers
+
+A rule may require scripts in `.hygienist/helpers/`, especially for deterministic
+checks or sanitizing sensitive inputs before their results reach the agent.
+When authoring a custom rule, create the necessary helper code as part of the
+same operation, before installing the dependent rule. Follow the destination,
+conflict, and partial-installation instructions in `SKILL.md`. Do not run
+installed helpers against the real project or perform its repairs as part of adding a rule. Custom helpers may receive the synthetic verification
+described below. Template installation remains copy-only. Do not add unrelated
+scripts.
+
+Read `Helper dependencies` as installation metadata for this authoring
+operation; it never directs a checker to install or replace code.
+For a selected starter template, copy only its explicitly declared helpers from
+the skill, preserving their contents. Do not ask again about dependencies already
+defined by the selected template. A rule is self-contained when it documents its
+helpers; it does not need to embed their code in Markdown.
+
+Document each helper's project-relative path, invocation, input scope, runtime
+requirements, sanitized output, exit/error behavior, and permitted side effects.
+For sensitive inputs, explicitly prohibit direct agent reads and alternate
+commands that bypass sanitization. If a helper fails or is missing, report a
+failed check rather than falling back to exposing sensitive data. Safe diagnostics
+must not include values, raw input, diffs, or exception text containing secrets.
+Helpers are not inherently read-only: any writes must stay within the agreed
+repair permissions. Checkers must never author or modify helpers during a run.
+
+## Verify custom helpers during authoring
+
+Before installing custom code, review its inputs, outputs, dependencies, and
+side effects. Test the candidate in a newly created disposable temporary tree
+outside the real target, using only invented inputs (including fake secret
+canaries). Copy the candidate there and pass that temporary root explicitly;
+never give it real project paths, real secrets, or a copy of the real `.env`.
+Do not execute the installed copy as a shortcut. This exception verifies the
+helper, not the installed rule or project repairs, and does not apply to `init`
+or `inspect`.
+
+Use an isolated invocation (for standard-library Python, `python3 -I -B`) and a
+minimal environment containing only needed runtime settings, no inherited
+credentials or `PYTHONPATH`. Use the temporary tree as the working directory.
+Local dependencies must be explicit and copied into the test tree; do not fall
+back to ambient imports. Disable external calls and keep any documented writes
+inside the disposable tree. If real services, credentials, or unavailable
+isolation are required, report verification as incomplete instead of running
+against the project. Import flags, environment cleanup, and temporary paths are
+not a filesystem or network sandbox: review the code before executing it and
+use host isolation when its behavior needs stronger containment.
+
+Exercise success, missing inputs, malformed inputs, and applicable error paths.
+Check exit codes, stdout and stderr for raw canary values/tracebacks/partial
+output; verify input preservation and that writes match the permitted scope.
+For a sanitizer, every failure must remain secret-free. Fix and retest defects
+before installation. Report what synthetic cases passed and any untested
+behavior separately from installation success. Remove only the temporary tree
+you created. Never claim the real project check passed from these tests.
+
 ## Write the rule
 
 1. Require an existing target directory. If `.hygienist/` is absent, create it as
@@ -97,11 +154,13 @@ information; do not re-ask the template's already defined choices.
    `status` and optional `message`, with a message required for `FAIL`. Do not
    introduce incompatible statuses such as `WARN`, or extra result fields.
    Keep diagnostics free of secrets and raw sensitive contents.
-6. Re-read the installed file for consistency with the agreed scope and criteria.
+6. Re-read the installed rule and any helpers for consistency with the agreed
+   scope and criteria, and verify all documented dependencies are installed.
    Then run the global skill's `scripts/renumber-rules.sh` with the target root,
    following the shared instructions in `SKILL.md`. Verify the rule is present
    at its final path and its contents survived renumbering. Report any write or
    renumbering error without claiming the operation finished successfully.
-7. Report the final rule path and a short summary of its behavior, especially
-   permitted repairs and skips. Do not execute it as part of `add-rule` unless
-   the user also requested a run.
+7. Report the final rule path, any installed or reused helper paths, and a short
+   summary of its behavior, especially permitted repairs and skips. Include the
+   synthetic helper verification results and limitations. Do not execute the
+   installed rule as part of `add-rule` unless the user also requested a run.

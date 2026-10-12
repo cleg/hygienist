@@ -1,7 +1,8 @@
 # Run Hygienist
 
 All skill resources referenced below are relative to the global skill directory.
-Task paths are relative to the target repository root.
+Task paths, installed helper paths, and rule input/output paths are relative
+to the target repository root, not the rule file or global skill directory.
 
 `run` executes configured rules without a safety preflight or an automatic
 `inspect` call. Users are responsible for reviewing the rules they install.
@@ -34,6 +35,11 @@ For each discovered task, in order:
   Keep the checker contract and assigned rule clearly distinct. Pass contract
   and task contents verbatim; do not summarize or rewrite them. Use a fresh
   context without other task files or previous checker results.
+- Tell it that any `Helper dependencies` installation metadata is for `init`
+  and `add-rule` only; required project helpers must already be installed.
+  Resolve helper paths from the target root and check the path components as
+  specified in `CHECKER.md` before execution. The parent does not execute or
+  install helpers, and does not replace missing helpers with bundled copies.
 - Tell it to execute only its assigned task and read that task's rule for what
   to return in `message`. Require the final JSON object defined by the contract.
   If the agent supports a native output schema, supply the same JSON Schema.

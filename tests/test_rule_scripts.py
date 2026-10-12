@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
+SKILL = PROJECT / "skills/hygienist"
 
 
 class RuleScriptTests(unittest.TestCase):
@@ -18,7 +19,7 @@ class RuleScriptTests(unittest.TestCase):
 
     def run_script(self, name, success=True):
         result = subprocess.run(
-            ["bash", str(PROJECT / "scripts" / name), str(self.root)],
+            ["bash", str(SKILL / "scripts" / name), str(self.root)],
             capture_output=True, text=True,
         )
         if success:
@@ -80,6 +81,22 @@ class RuleScriptTests(unittest.TestCase):
         self.assertEqual(report["tasks"], [".hygienist/10-a.md", ".hygienist/20-b.md"])
         self.assertEqual((fixtures / "10-a.md").read_bytes(), b"first")
         self.assertTrue(self.rules.is_symlink())
+
+    def test_helpers_are_not_discovered_executed_or_renumbered(self):
+        self.add("25-rule.md", b"rule")
+        helpers = self.rules / "helpers"
+        helpers.mkdir()
+        nested = helpers / "77-not-a-rule.md"
+        nested.write_bytes(b"supporting markdown")
+        script = helpers / "probe.py"
+        marker = self.root / "executed"
+        script.write_text(f"from pathlib import Path\nPath({str(marker)!r}).touch()\n")
+        original = script.read_bytes()
+        self.assertEqual(self.run_script("list-tasks.sh")["tasks"], [".hygienist/25-rule.md"])
+        self.assertEqual(self.run_script("renumber-rules.sh")["tasks"], [".hygienist/10-rule.md"])
+        self.assertEqual(nested.read_bytes(), b"supporting markdown")
+        self.assertEqual(script.read_bytes(), original)
+        self.assertFalse(marker.exists())
 
     def test_empty_and_missing_rule_directory(self):
         self.assertEqual(self.run_script("renumber-rules.sh"), {"renamed": [], "tasks": []})

@@ -37,18 +37,19 @@ npx skills add cleg/hygienist --skill hygienist --global --agent codex goose
 
 ### Use a local checkout
 
-If you're working on Hygienist itself, link this source repository into your
+If you're working on Hygienist itself, link the source skill directory into your
 agent's skills directory so edits are available immediately. Replace
-`/absolute/path/to/hygienist` with this repository's path.
+`/absolute/path/to/hygienist` with this repository's path. The distributable
+skill is in `skills/hygienist/`; README, logo, and tests stay outside it.
 
 ```sh
 # Codex
 mkdir -p ~/.codex/skills
-ln -s /absolute/path/to/hygienist ~/.codex/skills/hygienist
+ln -s /absolute/path/to/hygienist/skills/hygienist ~/.codex/skills/hygienist
 
 # Goose
 mkdir -p ~/.agents/skills
-ln -s /absolute/path/to/hygienist ~/.agents/skills/hygienist
+ln -s /absolute/path/to/hygienist/skills/hygienist ~/.agents/skills/hygienist
 ```
 
 If you already have a Hygienist installation, take a look before creating the
@@ -77,20 +78,38 @@ its usual skill invocation—or ask it to read Hygienist's installed instruction
 Initialization creates `.hygienist/` if it does not exist, then offers optional
 starter checks. Choose any combination or none. If the directory already
 exists, initialization leaves its contents alone; ask to add a rule instead.
-Initializing a project does not run checks.
+Selected templates may install their declared supporting scripts into
+`.hygienist/helpers/`. Initializing a project does not run checks or helpers.
 
 ### Add checks
 
 Checks are Markdown files named `NN-name.md` in `.hygienist/`, where `NN` is a
 number with at least two digits. Ask the agent to add a check in plain language;
 it will clarify important details such as scope, pass/fail criteria, and
-whether it may make repairs. Adding a check does not run it.
+whether it may make repairs. Checks can use supporting scripts in
+`.hygienist/helpers/`; the agent can create them when adding a check. Each rule
+specifies its helper commands, inputs, outputs, error behavior, and allowed
+changes. Existing helpers are reused only when their contents match; conflicting
+files are not overwritten. Adding a check does not run it against the project.
+New custom helpers can be verified separately on synthetic temporary inputs before installation.
+
+### Maintain helpers
+
+Updating the global skill leaves installed project helpers and rules unchanged.
+Ask for a deliberate migration when needed. The agent checks every dependent
+rule before a compatible replacement; incompatible versions use a new helper
+name and migrate only selected rules. Ordinary installation never overwrites a
+conflicting copy. Removing a rule leaves its helpers in place; helper removal is
+an explicit operation after confirming no remaining references. See the
+[maintenance procedure](skills/hygienist/references/HELPERS.md).
 
 ### Review checks
 
-`inspect` reads the project's rules and reports potentially risky behavior,
-with paths, line numbers, and safer alternatives. It does not execute rules or
-change files. The report is advisory: it cannot guarantee that a rule is safe,
+`inspect` reads the project's rules and the local helper code they call, and
+reports potentially risky behavior with paths, line numbers, and safer alternatives. Helper findings include the
+calling rules; missing dependencies mean incomplete coverage. Supporting Markdown
+in `helpers/` is distinguished from non-discovered checker tasks. It does not
+execute rules or change files. The report is advisory: it cannot guarantee that a rule is safe,
 and it does not automatically block a later run.
 
 ### Run checks
@@ -127,10 +146,44 @@ During initialization, you can choose from these optional templates:
 
 | Check | What it does |
 | --- | --- |
-| [Environment example](templates/10-env-example.md) | Aligns `.env.example` keys with `.env` and clears example values. It never changes `.env`; if `.env` is absent, it skips synchronization and audits an existing example for secrets. |
-| [OS artifacts](templates/20-os-artifacts.md) | Adds common macOS, Windows, and Linux artifact patterns to `.gitignore`; suggests untracking indexed artifacts without removing them automatically. |
-| [Conflict markers](templates/30-conflict-markers.md) | Reports unresolved merge markers and unmerged Git index entries without editing files. |
+| [Environment example](skills/hygienist/templates/10-env-example.md) | Uses a Python helper to obtain only `.env` keys and clears example values. The agent must not read `.env` directly. It never changes `.env`; if `.env` is absent, it skips synchronization and audits an existing example for secrets. |
+| [OS artifacts](skills/hygienist/templates/20-os-artifacts.md) | Adds common macOS, Windows, and Linux artifact patterns to `.gitignore`; suggests untracking indexed artifacts without removing them automatically. |
+| [Conflict markers](skills/hygienist/templates/30-conflict-markers.md) | Reports unresolved merge markers and unmerged Git index entries without editing files. |
 
 The first two templates can make limited repairs to project files. Have a look
 at a template before choosing it, and review installed rules before asking your
 agent to run them.
+
+### Environment helper
+
+The environment template installs the bundled
+`skills/hygienist/templates/helpers/env-keys.py` as
+`.hygienist/helpers/env-keys.py`. It needs Python 3 on a POSIX platform providing
+`os.O_NOFOLLOW` and `os.O_NONBLOCK` (macOS or Linux), with no additional packages. Native Windows is
+unsupported; use a compatible POSIX environment such as WSL. Missing required
+flags fail with a controlled diagnostic, without reading `.env`:
+
+```sh
+python3 -I -B .hygienist/helpers/env-keys.py /absolute/path/to/project
+```
+
+The `-I` flag isolates imports from neighboring files, `PYTHONPATH`, and user
+site packages; `-B` prevents bytecode cache writes. The checker verifies the
+helper file and its parent directories before executing it: symlinks below the
+declared `.hygienist` directory are rejected. A deliberately selected symlink
+for `.hygienist` itself remains supported. Installation metadata in a rule is
+for `init`/`add-rule`; a checker requires helpers to be installed already.
+
+Successful output contains only `NAME=` lines, with no values or comments. The
+helper supports comments, optional `export`, and quoted multiline values without
+executing them or expanding variable references. It rejects duplicate keys,
+symlinks, mixed quoting, backslash continuations, and other unsupported syntax.
+Exit codes are `0` for success, `3` for an absent `.env`, `1` for read/parse
+failure, and `2` for incorrect invocation. Errors never produce partial keys.
+The helper never writes files. A missing or failed helper makes the check fail;
+the agent must not substitute a direct read of `.env`.
+
+The rule still reads and audits `.env.example`, and can make the documented
+repairs. This boundary is an agent instruction, not an additional sandbox.
+Helpers are supporting resources: discovery and renumbering apply only to the
+numbered Markdown rules directly in `.hygienist/`.

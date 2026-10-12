@@ -1,29 +1,56 @@
 # Keep .env.example aligned with .env without secrets
 
+## Helper dependencies
+
+Installation metadata for `init`/`add-rule` only; this section is not an
+installation instruction for a checker, even when copied into an installed rule.
+
+- Bundled source (relative to the skill root): `templates/helpers/env-keys.py`.
+- Installed destination (relative to the target root): `.hygienist/helpers/env-keys.py`.
+- Runtime: Python 3 on POSIX (macOS/Linux), with `os.O_NOFOLLOW` and `os.O_NONBLOCK`, standard library only; invocation must include `-I -B`.
+
+This is the only helper required by the template. During a check it must already
+be installed; the checker must not install it or substitute the bundled source.
+
 ## Scope and permitted changes
 
 Check only `.env` and `.env.example` at the target repository root. You may create
 or update `.env.example`. Do not change `.env`, stage files, or commit changes.
 Do not print secret values, raw file contents, or diffs containing old values.
-Read and compare file contents in a local process whose output contains only
-variable names and diagnostics. Do not source or execute either dotenv file,
-expand variable references, or install dependencies.
+Never read `.env` directly into agent context. Obtain its keys only from the
+installed helper's output. Do not bypass it with another parser, inline script,
+file reader, shell command, or tool. You may read `.env.example` for its audit,
+but do not expose its sensitive contents in tool output or reports. Do not source
+or execute either dotenv file, expand variable references, or install dependencies.
 
 ## Check and repair
 
-1. Inspect `.env`. If it is absent, skip synchronization without treating that
-   as a failure. Do not create `.env` or `.env.example`. If `.env.example` also
-   does not exist, return `OK` with "Skipped: neither .env nor .env.example exists."
-   If the example exists, proceed directly to the independent secret audit in
-   step 6. An existing but unreadable or non-regular `.env` is an access/path
-   problem, not an absent source: report `FAIL` without modifying it.
-2. When `.env` exists, parse dotenv assignments using the project's existing dotenv parser when
-   available, or a local parser that supports the syntax actually present.
-   Recognize comments, blank lines, optional `export`, quoted values, and
-   multiline values. Never interpret a continuation line inside a quoted value
-   as another variable. If parsing is ambiguous or unsupported, report `FAIL`
-   with the affected line numbers, without values, and do not write a file.
-   Treat duplicate variable definitions as ambiguous and report their names.
+1. Resolve `.hygienist/helpers/env-keys.py` from the target root. Before
+   executing it, inspect the path without following links below the declared
+   `.hygienist` directory. Require `helpers/` to be an actual directory and
+   `env-keys.py` to be a readable regular file; reject symlinks at either path,
+   including broken links or links pointing inside the directory. Check parents
+   first, one component at a time. Stop at the first invalid component without
+   inspecting its children, even with `lstat` (which follows intermediate links). An explicitly
+   selected `.hygienist` directory symlink is allowed: disclose its destination
+   and check `helpers/` and the helper within that declared destination.
+   If any component is missing, conflicting, or cannot be verified, return
+   `FAIL` without executing the helper or reading `.env`.
+   From the target root, run `python3 -I -B .hygienist/helpers/env-keys.py "<target-root>"`,
+   replacing `<target-root>` with the actual target path. Do not create, modify,
+   or replace the helper during a check. If Python or the helper is unavailable,
+   return `FAIL`; never fall back to reading `.env` yourself or dropping the
+   isolation flags.
+2. Use only stdout from a successful helper invocation as the source keys.
+   Exit `0` means stdout contains only ordered `NAME=` assignments (possibly
+   empty). Exit `3` means `.env` is absent: skip synchronization, create neither
+   dotenv file, and proceed to step 6 if `.env.example` exists. If both files are
+   absent, return `OK` with "Skipped: neither .env nor .env.example exists."
+   Any other exit code means `FAIL`, without writing the example. The helper
+   rejects duplicate keys, unsupported syntax, unreadable/non-regular files,
+   and symlinks; its diagnostics contain no values. Do not inspect the original
+   file to diagnose a failure. Validate successful stdout consists only of
+   unique lines matching `[A-Za-z_][A-Za-z0-9_]*=`; invalid output means `FAIL`.
 3. The desired example contains exactly the variable names from `.env`, in their
    first-occurrence order, with each assignment written as `NAME=`. All values
    must be empty, including non-secret defaults: this avoids guessing which
@@ -36,7 +63,9 @@ expand variable references, or install dependencies.
    Refuse to overwrite a directory or symlink at `.env.example`.
 5. If the existing example already has canonical content, leave it unchanged.
    Otherwise replace its contents with the canonical example. Re-read it and
-   verify that names match, all values are empty, and `.env` remains unchanged.
+   verify that names match the successful helper output and all values are empty.
+   Do not read `.env` to verify this; the helper is read-only and repairs must
+   address only `.env.example`.
 
 6. Audit the final `.env.example` independently for accidentally included secrets,
    after synchronization or even when `.env` was absent. Require a readable
